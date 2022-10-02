@@ -5,7 +5,7 @@
  * Last updated: 2022-09-28
  */
 
-use chess_template::{Colour, Game, PieceType};
+use jblomlof_chess::{Game};
 
 use ggez::{conf, event, graphics, Context, ContextBuilder, GameError, GameResult};
 use std::{collections::HashMap, env, path};
