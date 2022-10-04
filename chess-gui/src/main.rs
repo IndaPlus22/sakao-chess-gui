@@ -89,7 +89,7 @@ impl AppState {
                         'n' => KNIGHT,
                         'r' => ROOK,
                         'p' => PAWN,
-                        _ => NONE,
+                        _ => NONE, // Should never happen
                     };
                     self.board[i][j] = Some(Piece::new(role, (i as i16, j as i16), is_white));
                 } else {
