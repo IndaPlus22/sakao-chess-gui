@@ -4,8 +4,7 @@
  * Edited: Isak Larsson <isaklar@kth.se>
  * Last updated: 2022-09-28
  */
-
-use jblomlof_chess::{Game};
+use jblomlof_chess::Game;
 
 use ggez::{conf, event, graphics, Context, ContextBuilder, GameError, GameResult};
 use std::{collections::HashMap, env, path};
@@ -27,77 +26,102 @@ const BLACK: graphics::Color =
 const WHITE: graphics::Color =
     graphics::Color::new(188.0 / 255.0, 140.0 / 255.0, 76.0 / 255.0, 1.0);
 
+pub const NONE: u8 = 0;
+pub const KING: u8 = 1;
+pub const QUEEN: u8 = 2;
+pub const BISHOP: u8 = 3;
+pub const KNIGHT: u8 = 4;
+pub const ROOK: u8 = 5;
+pub const PAWN: u8 = 6;
+
+#[derive(Debug, Copy, Clone)]
+struct Piece {
+    role: u8,
+    position: (i16, i16),
+    is_white: bool,
+}
+
+impl Piece {
+    fn new(role: u8, position: (i16, i16), is_white: bool) -> Self {
+        Piece {
+            role,
+            position,
+            is_white,
+        }
+    }
+}
+
 /// GUI logic and event implementation structure.
 struct AppState {
-    sprites: HashMap<(Colour, PieceType), graphics::Image>,
+    sprites: HashMap<(bool, u8), graphics::Image>,
     // Example board representation.
-    board: [[Option<(Colour, PieceType)>; 8]; 8],
+    board: [[Option<Piece>; 8]; 8],
     // Imported game representation.
     game: Game,
 }
-
-
 
 impl AppState {
     /// Initialise new application, i.e. initialise new game and load resources.
     fn new(ctx: &mut Context) -> GameResult<AppState> {
         
-        // A cool way to instantiate the board
-        // You can safely delete this if the chess-library already does this
-        let royal_rank = |colour| {
-            [
-                Some((colour, PieceType::Rook)),
-                Some((colour, PieceType::Knight)),
-                Some((colour, PieceType::Bishop)),
-                Some((colour, PieceType::Queen)),
-                Some((colour, PieceType::King)),
-                Some((colour, PieceType::Rook)),
-                Some((colour, PieceType::Knight)),
-                Some((colour, PieceType::Bishop)),
-            ]
-        };
-        let pawn_rank = |colour| [Some((colour, PieceType::Pawn)); 8];
-        let empty_rank = || [None; 8];
-
         let state = AppState {
             sprites: AppState::load_sprites(ctx),
-            board: [
-                royal_rank(Colour::Black),
-                pawn_rank(Colour::Black),
-                empty_rank(),
-                empty_rank(),
-                empty_rank(),
-                empty_rank(),
-                pawn_rank(Colour::White),
-                royal_rank(Colour::White),
-            ],
+            board: [[None; 8]; 8],
             game: Game::new(),
         };
 
         Ok(state)
     }
+
+    fn load_board(&mut self) -> () {
+        let board_str: String = Game::get_board(&self.game);
+
+        for i in 0..8 {
+            for j in 0..8 {
+                let piece = board_str.chars().nth(i * 8 + (j + i)).unwrap(); // + 2i to skip "\n"
+
+                if piece != '*' {
+                    let is_white = piece.is_uppercase();
+                    let role = match piece.to_ascii_lowercase() {
+                        'k' => KING,
+                        'q' => QUEEN,
+                        'b' => BISHOP,
+                        'n' => KNIGHT,
+                        'r' => ROOK,
+                        'p' => PAWN,
+                        _ => NONE,
+                    };
+                    self.board[i][j] = Some(Piece::new(role, (i as i16, j as i16), is_white));
+                } else {
+                    self.board[i][j] = None;
+                }
+            }
+        }
+    }
+
+
     #[rustfmt::skip] // Skips formatting on this function (not recommended)
-    /// Loads chess piese images into hashmap, for ease of use.
-    fn load_sprites(ctx: &mut Context) -> HashMap<(Colour, PieceType), graphics::Image> {
+                     /// Loads chess piese images into hashmap, for ease of use.
+    fn load_sprites(ctx: &mut Context) -> HashMap<(bool, u8), graphics::Image> {
         [
-            ((Colour::Black, PieceType::King), "/black_king.png".to_string()),
-            ((Colour::Black, PieceType::Queen), "/black_queen.png".to_string()),
-            ((Colour::Black, PieceType::Rook), "/black_rook.png".to_string()),
-            ((Colour::Black, PieceType::Pawn), "/black_pawn.png".to_string()),
-            ((Colour::Black, PieceType::Bishop), "/black_bishop.png".to_string()),
-            ((Colour::Black, PieceType::Knight), "/black_knight.png".to_string()),
-            ((Colour::White, PieceType::King), "/white_king.png".to_string()),
-            ((Colour::White, PieceType::Queen), "/white_queen.png".to_string()),
-            ((Colour::White, PieceType::Rook), "/white_rook.png".to_string()),
-            ((Colour::White, PieceType::Pawn), "/white_pawn.png".to_string()),
-            ((Colour::White, PieceType::Bishop), "/white_bishop.png".to_string()),
-            ((Colour::White, PieceType::Knight), "/white_knight.png".to_string())
+            ((false, KING), "/black_king.png".to_string()),
+            ((false, QUEEN), "/black_queen.png".to_string()),
+            ((false, ROOK), "/black_rook.png".to_string()),
+            ((false, PAWN), "/black_pawn.png".to_string()),
+            ((false, BISHOP), "/black_bishop.png".to_string()),
+            ((false, KNIGHT), "/black_knight.png".to_string()),
+            ((true, KING), "/white_king.png".to_string()),
+            ((true, QUEEN), "/white_queen.png".to_string()),
+            ((true, ROOK), "/white_rook.png".to_string()),
+            ((true, PAWN), "/white_pawn.png".to_string()),
+            ((true, BISHOP), "/white_bishop.png".to_string()),
+            ((true, KNIGHT), "/white_knight.png".to_string())
         ]
             .iter()
             .map(|(piece, path)| {
                 (*piece, graphics::Image::new(ctx, path).unwrap())
             })
-            .collect::<HashMap<(Colour, PieceType), graphics::Image>>()
+            .collect::<HashMap<(bool, u8), graphics::Image>>()
     }
 }
 
@@ -111,6 +135,8 @@ impl event::EventHandler<GameError> for AppState {
 
     /// Draw interface, i.e. draw game board
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
+        self.load_board();
+
         // clear interface with gray background colour
         graphics::clear(ctx, [0.5, 0.5, 0.5, 1.0].into());
 
@@ -177,7 +203,7 @@ impl event::EventHandler<GameError> for AppState {
                 if let Some(piece) = self.board[row as usize][col as usize] {
                     graphics::draw(
                         ctx,
-                        self.sprites.get(&piece).unwrap(),
+                        self.sprites.get(&(piece.is_white, piece.role)).unwrap(),
                         graphics::DrawParam::default()
                             .scale([2.0, 2.0]) // Tile size is 90 pixels, while image sizes are 45 pixels.
                             .dest([
