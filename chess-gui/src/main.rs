@@ -7,6 +7,8 @@
 use jblomlof_chess::Game;
 
 use ggez::{conf, event, graphics, Context, ContextBuilder, GameError, GameResult};
+use std::f32::consts::PI;
+use std::fmt::Display;
 use std::{collections::HashMap, env, path};
 
 /// A chess board is 8x8 tiles.
@@ -63,7 +65,6 @@ struct AppState {
 impl AppState {
     /// Initialise new application, i.e. initialise new game and load resources.
     fn new(ctx: &mut Context) -> GameResult<AppState> {
-        
         let state = AppState {
             sprites: AppState::load_sprites(ctx),
             board: [[None; 8]; 8],
@@ -97,6 +98,15 @@ impl AppState {
                 }
             }
         }
+    }
+
+    fn row_column_to_file_rank(_row: usize, _column: usize) -> String {
+        let files: [&str; 8] = ["A", "B", "C", "D", "E", "F", "G", "H"];
+        let rank: String = (_column - 7 + 1).to_string();
+        let mut file: String = files[_row].to_string();
+
+        file.push_str(&rank);
+        file
     }
 
 
@@ -243,7 +253,20 @@ impl event::EventHandler<GameError> for AppState {
         x: f32,
         y: f32,
     ) {
-        if button == event::MouseButton::Left {
+        if button == event::MouseButton::Left { // TODO: Funkar ej
+            println!("xy: {}, {}", x, y);
+            println!("xy: {}, {}", x / 90.0, y / 90.0);
+            let board_row: usize = (x / 90.0) as usize; // left is 0, right is 7
+            let board_column: usize = -((y / 90.0) - 7.0) as usize; // Top is 0 bottom is 7 TODO: blir negativ
+            println!("pressed: {}{}", board_row, board_column);
+
+            if (!self.board[board_row][board_column].is_none()) {
+                let piece = self.board[board_row][board_column].unwrap();
+                if piece.is_white && self.game.is_white_turn() {
+                    let file_rank = Self::row_column_to_file_rank(board_row, board_column);
+                    self.game.get_possible_moves(&file_rank);
+                }
+            }
             /* check click position and update board accordingly */
         }
     }
