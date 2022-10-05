@@ -253,18 +253,21 @@ impl event::EventHandler<GameError> for AppState {
         x: f32,
         y: f32,
     ) {
-        if button == event::MouseButton::Left { // TODO: Funkar ej
+        if button == event::MouseButton::Left { // TODO:
             println!("xy: {}, {}", x, y);
             println!("xy: {}, {}", x / 90.0, y / 90.0);
             let board_row: usize = (x / 90.0) as usize; // left is 0, right is 7
-            let board_column: usize = -((y / 90.0) - 7.0) as usize; // Top is 0 bottom is 7 TODO: blir negativ
+            let board_column: usize = 7 - (y / 90.0) as usize; // Top is 0 bottom is 7 
             println!("pressed: {}{}", board_row, board_column);
 
             if (!self.board[board_row][board_column].is_none()) {
                 let piece = self.board[board_row][board_column].unwrap();
                 if piece.is_white && self.game.is_white_turn() {
                     let file_rank = Self::row_column_to_file_rank(board_row, board_column);
-                    self.game.get_possible_moves(&file_rank);
+                    let moves = self.game.get_possible_moves(&file_rank).expect("moves");
+
+                    let moves_tup: Vec<(usize, usize)> = Vec::new(); // convert it to positions I can use
+
                 }
             }
             /* check click position and update board accordingly */
