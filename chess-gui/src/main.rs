@@ -1,3 +1,4 @@
+use ggez::graphics::Color;
 /**
  * Chess GUI template.
  * Author: Viola Söderlund <violaso@kth.se>
@@ -27,6 +28,8 @@ const BLACK: graphics::Color =
     graphics::Color::new(228.0 / 255.0, 196.0 / 255.0, 108.0 / 255.0, 1.0);
 const WHITE: graphics::Color =
     graphics::Color::new(188.0 / 255.0, 140.0 / 255.0, 76.0 / 255.0, 1.0);
+const HIGHLIGHT: graphics::Color =
+    graphics::Color::new(30.0 / 255.0, 80.0 / 255.0, 80.0 / 255.0, 0.3);
 
 pub const NONE: u8 = 0;
 pub const KING: u8 = 1;
@@ -60,6 +63,10 @@ struct AppState {
     board: [[Option<Piece>; 8]; 8],
     // Imported game representation.
     game: Game,
+    // places to highlight
+    highlight_poses: Vec<(usize, usize)>,
+    // which piece is being choosed
+    highlight_piece: Option<Piece>,
 }
 
 impl AppState {
@@ -69,6 +76,8 @@ impl AppState {
             sprites: AppState::load_sprites(ctx),
             board: [[None; 8]; 8],
             game: Game::new(),
+            highlight_poses: Vec::new(),
+            highlight_piece: None,
         };
 
         Ok(state)
@@ -100,15 +109,52 @@ impl AppState {
         }
     }
 
-    fn row_column_to_file_rank(_row: usize, _column: usize) -> String {
+    fn to_file_rank(&self, _column: usize, _row: usize) -> String {
         let files: [&str; 8] = ["A", "B", "C", "D", "E", "F", "G", "H"];
-        let rank: String = (_column - 7 + 1).to_string();
+        let rank: String = (7 - _column + 1).to_string();
         let mut file: String = files[_row].to_string();
 
         file.push_str(&rank);
         file
     }
 
+    fn to_row_column(&self, filerank: &str) -> (usize, usize) {
+        let chars: Vec<char> = String::from(filerank).chars().collect::<Vec<char>>();
+
+        let column: usize = match chars[0] {
+            'A' => 0,
+            'B' => 1,
+            'C' => 2,
+            'D' => 3,
+            'E' => 4,
+            'F' => 5,
+            'G' => 6,
+            'H' => 7,
+            _ => 99,
+        };
+
+        let row: usize = 7 - (chars[1].to_digit(10).expect("to row column place") as usize - 1);
+
+        (column, row)
+    }
+
+    fn to_tuple_moves(&self, _moves: Vec<String>) -> Vec<(usize, usize)> {
+        let mut tuple_moves: Vec<(usize, usize)> = Vec::new();
+
+        for i in 0.._moves.len() {
+            tuple_moves.push(self.to_row_column(&_moves[i]));
+        }
+
+        tuple_moves
+    }
+
+    fn add_color(&self, _color1: Color, _color2: Color) -> Color {
+        let r: f32 = _color1.r + _color2.r;
+        let g: f32 = _color1.g + _color2.g;
+        let b: f32 = _color1.b + _color2.b;
+
+        graphics::Color::new(r, g, b, 1.0)
+    }
 
     #[rustfmt::skip] // Skips formatting on this function (not recommended)
                      /// Loads chess piese images into hashmap, for ease of use.
@@ -140,6 +186,9 @@ impl event::EventHandler<GameError> for AppState {
     /// For updating game logic, which front-end doesn't handle.
     /// It won't be necessary to touch this unless you are implementing something that's not triggered by the user, like a clock
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        for y in 0..8 {
+            for x in 0..8 {}
+        }
         Ok(())
     }
 
@@ -179,6 +228,26 @@ impl event::EventHandler<GameError> for AppState {
         for row in 0..8 {
             for col in 0..8 {
                 // draw tile
+                let mut color = match col % 2 {
+                    0 => {
+                        if row % 2 == 0 {
+                            WHITE
+                        } else {
+                            BLACK
+                        }
+                    }
+                    _ => {
+                        if row % 2 == 0 {
+                            BLACK
+                        } else {
+                            WHITE
+                        }
+                    }
+                };
+                if self.highlight_poses.contains(&(col as usize, row as usize)) {
+                    color = self.add_color(color, HIGHLIGHT);
+                }
+
                 let rectangle = graphics::Mesh::new_rectangle(
                     ctx,
                     graphics::DrawMode::fill(),
@@ -188,24 +257,10 @@ impl event::EventHandler<GameError> for AppState {
                         GRID_CELL_SIZE.0 as i32,
                         GRID_CELL_SIZE.1 as i32,
                     ),
-                    match col % 2 {
-                        0 => {
-                            if row % 2 == 0 {
-                                WHITE
-                            } else {
-                                BLACK
-                            }
-                        }
-                        _ => {
-                            if row % 2 == 0 {
-                                BLACK
-                            } else {
-                                WHITE
-                            }
-                        }
-                    },
+                    color,
                 )
                 .expect("Failed to create tile.");
+
                 graphics::draw(ctx, &rectangle, graphics::DrawParam::default())
                     .expect("Failed to draw tiles.");
 
@@ -253,22 +308,55 @@ impl event::EventHandler<GameError> for AppState {
         x: f32,
         y: f32,
     ) {
-        if button == event::MouseButton::Left { // TODO:
+        if button == event::MouseButton::Left {
             println!("xy: {}, {}", x, y);
             println!("xy: {}, {}", x / 90.0, y / 90.0);
+
             let board_row: usize = (x / 90.0) as usize; // left is 0, right is 7
-            let board_column: usize = 7 - (y / 90.0) as usize; // Top is 0 bottom is 7 
-            println!("pressed: {}{}", board_row, board_column);
+            let board_column: usize = (y / 90.0) as usize; // Top is 0 bottom is 7
+            println!("pressed: rowboard{}, {}", board_row, board_column);
 
-            if (!self.board[board_row][board_column].is_none()) {
-                let piece = self.board[board_row][board_column].unwrap();
-                if piece.is_white && self.game.is_white_turn() {
-                    let file_rank = Self::row_column_to_file_rank(board_row, board_column);
-                    let moves = self.game.get_possible_moves(&file_rank).expect("moves");
+            let tmp = self.to_file_rank(board_row, board_column);
+            let tmp2 = !self.board[board_column][board_row].is_none();
+            println!("Filerank: {}, there is a piece: {}", tmp, tmp2);
 
-                    let moves_tup: Vec<(usize, usize)> = Vec::new(); // convert it to positions I can use
+            if !self.board[board_column][board_row].is_none() {
+                println!("first thing");
 
+                self.highlight_poses = Vec::new();
+
+                let piece = self.board[board_column][board_row].unwrap();
+                println!("role: {}, is white: {}", piece.role, piece.is_white);
+
+                if piece.is_white == self.game.is_white_turn() {
+                    let file_rank = self.to_file_rank(board_column, board_row);
+
+                    println!("Filerank: {}", file_rank);
+                    let moves = self.game.get_possible_moves(&file_rank);
+
+                    if !moves.is_none() {
+                        self.highlight_poses = self.to_tuple_moves(moves.unwrap());
+                        self.highlight_piece = self.board[board_column][board_row];
+                        // TODO: convert it to positions I can use
+                    }
                 }
+            }
+
+            if self.highlight_poses.contains(&(board_row, board_column)) {
+                // println!(
+                //     "ppp: {}, {}",
+                //     self.highlight_piece.unwrap().position.0 as usize,
+                //     self.highlight_piece.unwrap().position.1 as usize
+                // );
+                self.game.make_move(
+                    &self.to_file_rank(
+                        self.highlight_piece.unwrap().position.0 as usize,
+                        self.highlight_piece.unwrap().position.1 as usize,
+                    ),
+                    &self.to_file_rank(board_column, board_row),
+                );
+                self.highlight_piece = None;
+                self.highlight_poses = Vec::new();
             }
             /* check click position and update board accordingly */
         }
