@@ -29,7 +29,7 @@ const BLACK: graphics::Color =
 const WHITE: graphics::Color =
     graphics::Color::new(188.0 / 255.0, 140.0 / 255.0, 76.0 / 255.0, 1.0);
 const HIGHLIGHT: graphics::Color =
-    graphics::Color::new(30.0 / 255.0, 80.0 / 255.0, 80.0 / 255.0, 0.3);
+    graphics::Color::new(40.0 / 255.0, 90.0 / 255.0, 80.0 / 255.0, 0.3);
 
 pub const NONE: u8 = 0;
 pub const KING: u8 = 1;
@@ -320,7 +320,22 @@ impl event::EventHandler<GameError> for AppState {
             let tmp2 = !self.board[board_column][board_row].is_none();
             println!("Filerank: {}, there is a piece: {}", tmp, tmp2);
 
-            if !self.board[board_column][board_row].is_none() {
+            if self.highlight_poses.contains(&(board_row, board_column)) {
+                println!(
+                    "from: {}, to: {}",
+                    self.highlight_piece.unwrap().position.0 as usize,
+                    self.highlight_piece.unwrap().position.1 as usize
+                );
+                self.game.make_move(
+                    &self.to_file_rank(
+                        self.highlight_piece.unwrap().position.0 as usize,
+                        self.highlight_piece.unwrap().position.1 as usize,
+                    ),
+                    &self.to_file_rank(board_column, board_row),
+                );
+                self.highlight_piece = None;
+                self.highlight_poses = Vec::new();
+            } else if !self.board[board_column][board_row].is_none() {
                 // println!("first thing");
 
                 self.highlight_poses = Vec::new();
@@ -340,29 +355,13 @@ impl event::EventHandler<GameError> for AppState {
                         // TODO: convert it to positions I can use
                     }
                 }
+
+                for item in &self.highlight_poses {
+                    println!("can move to {}, {}", item.0, item.1);
+                }
             }
 
-            // doesn't kill, so not coming in here
-            for item in &self.highlight_poses {
-                println!("hgl: {}, {}", item.0, item.1);
-            }
-            println!("wtf: {},{}",board_row, board_column);
-            if self.highlight_poses.contains(&(board_row, board_column)) {
-                println!( // doenst run
-                    "from: {}, to: {}",
-                    self.highlight_piece.unwrap().position.0 as usize,
-                    self.highlight_piece.unwrap().position.1 as usize
-                );
-                self.game.make_move(
-                    &self.to_file_rank(
-                        self.highlight_piece.unwrap().position.0 as usize,
-                        self.highlight_piece.unwrap().position.1 as usize,
-                    ),
-                    &self.to_file_rank(board_column, board_row),
-                );
-                self.highlight_piece = None;
-                self.highlight_poses = Vec::new();
-            }
+            
             /* check click position and update board accordingly */
         }
     }
