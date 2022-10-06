@@ -309,29 +309,29 @@ impl event::EventHandler<GameError> for AppState {
         y: f32,
     ) {
         if button == event::MouseButton::Left {
-            println!("xy: {}, {}", x, y);
-            println!("xy: {}, {}", x / 90.0, y / 90.0);
+            // println!("xy: {}, {}", x, y);
+            // println!("xy: {}, {}", x / 90.0, y / 90.0);
 
             let board_row: usize = (x / 90.0) as usize; // left is 0, right is 7
             let board_column: usize = (y / 90.0) as usize; // Top is 0 bottom is 7
-            println!("pressed: rowboard{}, {}", board_row, board_column);
+            // println!("pressed: rowboard{}, {}", board_row, board_column);
 
             let tmp = self.to_file_rank(board_row, board_column);
             let tmp2 = !self.board[board_column][board_row].is_none();
             println!("Filerank: {}, there is a piece: {}", tmp, tmp2);
 
             if !self.board[board_column][board_row].is_none() {
-                println!("first thing");
+                // println!("first thing");
 
                 self.highlight_poses = Vec::new();
 
                 let piece = self.board[board_column][board_row].unwrap();
-                println!("role: {}, is white: {}", piece.role, piece.is_white);
+                // println!("role: {}, is white: {}", piece.role, piece.is_white);
 
                 if piece.is_white == self.game.is_white_turn() {
                     let file_rank = self.to_file_rank(board_column, board_row);
 
-                    println!("Filerank: {}", file_rank);
+                    // println!("Filerank: {}", file_rank);
                     let moves = self.game.get_possible_moves(&file_rank);
 
                     if !moves.is_none() {
@@ -342,12 +342,17 @@ impl event::EventHandler<GameError> for AppState {
                 }
             }
 
+            // doesn't kill, so not coming in here
+            for item in &self.highlight_poses {
+                println!("hgl: {}, {}", item.0, item.1);
+            }
+            println!("wtf: {},{}",board_row, board_column);
             if self.highlight_poses.contains(&(board_row, board_column)) {
-                // println!(
-                //     "ppp: {}, {}",
-                //     self.highlight_piece.unwrap().position.0 as usize,
-                //     self.highlight_piece.unwrap().position.1 as usize
-                // );
+                println!( // doenst run
+                    "from: {}, to: {}",
+                    self.highlight_piece.unwrap().position.0 as usize,
+                    self.highlight_piece.unwrap().position.1 as usize
+                );
                 self.game.make_move(
                     &self.to_file_rank(
                         self.highlight_piece.unwrap().position.0 as usize,
