@@ -8,9 +8,7 @@ use ggez::graphics::Color;
 use jblomlof_chess::Game;
 
 use ggez::{conf, event, graphics, Context, ContextBuilder, GameError, GameResult};
-use std::f32::consts::PI;
-use std::fmt::Display;
-use std::{collections::HashMap, env, path};
+use std::{collections::HashMap, path};
 
 /// A chess board is 8x8 tiles.
 const GRID_SIZE: i16 = 8;
@@ -186,9 +184,6 @@ impl event::EventHandler<GameError> for AppState {
     /// For updating game logic, which front-end doesn't handle.
     /// It won't be necessary to touch this unless you are implementing something that's not triggered by the user, like a clock
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        for y in 0..8 {
-            for x in 0..8 {}
-        }
         Ok(())
     }
 
@@ -360,8 +355,6 @@ impl event::EventHandler<GameError> for AppState {
                     println!("can move to {}, {}", item.0, item.1);
                 }
             }
-
-            
             /* check click position and update board accordingly */
         }
     }
@@ -382,7 +375,7 @@ pub fn main() -> GameResult {
                 .dimensions(SCREEN_SIZE.0, SCREEN_SIZE.1) // Set window dimensions
                 .resizable(false), // Fixate window size
         );
-    let (mut contex, mut event_loop) = context_builder.build().expect("Failed to build context.");
+    let (mut contex, event_loop) = context_builder.build().expect("Failed to build context.");
 
     let state = AppState::new(&mut contex).expect("Failed to create state.");
     event::run(contex, event_loop, state) // Run window event loop
