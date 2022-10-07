@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-jblomlof-chess = { git = "https://github.com/IndaPlus22/jblomlof-chess.git" }
+jblomlof-chess = { git = "https://github.com/IndaPlus22/jblomlof-chess.git", version = "0.2.0"}
 ggez = "0.6.1"
