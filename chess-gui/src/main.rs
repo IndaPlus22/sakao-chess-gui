@@ -5,7 +5,7 @@ use ggez::graphics::Color;
  * Edited: Isak Larsson <isaklar@kth.se>
  * Last updated: 2022-09-28
  */
-use jblomlof_chess::Game;
+use jblomlof_chess::{Game, GameState};
 
 use ggez::{conf, event, graphics, Context, ContextBuilder, GameError, GameResult};
 use std::{collections::HashMap, path};
@@ -184,6 +184,12 @@ impl event::EventHandler<GameError> for AppState {
     /// For updating game logic, which front-end doesn't handle.
     /// It won't be necessary to touch this unless you are implementing something that's not triggered by the user, like a clock
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        if self.game.get_game_state() == GameState::GameOver {
+            self.game = Game::new();
+            self.board = [[None; 8]; 8];
+            self.highlight_poses = Vec::new();
+            self.highlight_piece = None;
+        }
         Ok(())
     }
 
